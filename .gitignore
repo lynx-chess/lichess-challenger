@@ -348,3 +348,12 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+
+# Dev settings file
+appsettings.Development.json
+
+# Docker
+.env
+publish/
+artifacts/
+lichess-challenger-logs/
