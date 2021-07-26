@@ -2,7 +2,7 @@
 
 ⚠️ Project under development ⚠️
 
-[![Build](buildlogo)][buildlink]
+[![Build][buildlogo]][buildlink]
 [![lichess-challenger release][releaselogo]][releaselink]
 
 `lichess-challenger` allows your Lichess bot to challenge other bots autonomously, when it's idle.
