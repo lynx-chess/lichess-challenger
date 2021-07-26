@@ -6,3 +6,6 @@ services:
     image: ghcr.io/lynx-chess/lichess-challenger:latest
     volumes:
       - ./lichess-challenger:/lichess-challenger/logs
+    environment:
+      - LICHESS_API_TOKEN=${LICHESS_API_TOKEN}
+      - LICHESS_USERNAME=${LICHESS_USERNAME}

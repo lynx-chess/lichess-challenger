@@ -1,21 +1,16 @@
-﻿using System;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace LichessChallenger.Model
 {
     public class User
     {
-        [JsonPropertyName("username")]
-        public string Username { get; }
+        [JsonPropertyName("name")]
+        public string Username { get; init; } = null!;
 
         [JsonPropertyName("online")]
-        public bool IsOnline { get; }
+        public bool IsOnline { get; init; }
 
         [JsonPropertyName("playing")]
-        public bool? IsPlaying { get; }
-
-        [JsonConstructor]
-        public User(string username, bool online, bool playing) =>
-            (Username, IsOnline, IsPlaying) = (username, online, playing);
+        public bool IsPlaying { get; init; }
     }
 }

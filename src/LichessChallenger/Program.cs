@@ -38,7 +38,6 @@ internal static class HostBuilderExtensions
                     {
                         httpClient.BaseAddress = new Uri("https://lichess.org/api");
 
-                        Console.WriteLine($"****{Environment.GetEnvironmentVariable("LICHESS_API_TOKEN")}****");
                         var token = context.Configuration["LICHESS_API_TOKEN"];
                         if (string.IsNullOrEmpty(token))
                         {
@@ -48,7 +47,8 @@ internal static class HostBuilderExtensions
                         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
                     })
                     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-                    .AddPolicyHandler(RetryPolicy());
+                    .AddPolicyHandler(ErrorRetryPolicy())
+                    .AddPolicyHandler(TooManyRequestsRetryPolicy());
                 services.AddHostedService<Worker>(services => services.GetRequiredService<Worker>());
             });
     }
@@ -65,11 +65,18 @@ internal static class HostBuilderExtensions
             .UseNLog();
     }
 
-    private static IAsyncPolicy<HttpResponseMessage> RetryPolicy()
+    private static IAsyncPolicy<HttpResponseMessage> ErrorRetryPolicy()
     {
         return HttpPolicyExtensions
             .HandleTransientHttpError()
-            .OrResult(msg => msg.StatusCode == System.Net.HttpStatusCode.NotFound || msg.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
-            .WaitAndRetryAsync(2, retryAttempt => TimeSpan.FromSeconds(Math.Pow(65, retryAttempt)));
+            .OrResult(msg => msg.StatusCode == System.Net.HttpStatusCode.NotFound)
+            .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
+    }
+
+    private static IAsyncPolicy<HttpResponseMessage> TooManyRequestsRetryPolicy()
+    {
+        return Policy<HttpResponseMessage>
+            .HandleResult(msg => msg.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+            .WaitAndRetryAsync(10, _ => TimeSpan.FromSeconds(65));
     }
 }

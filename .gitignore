@@ -352,6 +352,8 @@ MigrationBackup/
 # Dev settings file
 appsettings.Development.json
 
+*.profraw
+
 # Docker
 .env
 publish/

@@ -1,12 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
-using System.Text;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using LichessChallenger.Model;
@@ -18,7 +14,8 @@ namespace LichessChallenger
 {
     public class Worker : BackgroundService
     {
-        private readonly int _pollTime;
+        private readonly int _timeBetweenChallenges;
+        private readonly int _timeBetweenFindUserRequests;
         private readonly int _timeToHaveAChallengeAccepted;
         private readonly string _me;
         private readonly List<User> _botList;
@@ -36,13 +33,17 @@ namespace LichessChallenger
 
             _me = configuration["LICHESS_USERNAME"] ?? throw new("Missing essential config: Username");
 
-            if (!int.TryParse(configuration["PollTime"], out _pollTime))
+            if (!int.TryParse(configuration["TimeBetweenChallenges"], out _timeBetweenChallenges))
             {
-                _pollTime = 5_000;
+                _timeBetweenChallenges = 5_000;
             }
             if (!int.TryParse(configuration["TimeToHaveAChallengeAccepted"], out _timeToHaveAChallengeAccepted))
             {
                 _timeToHaveAChallengeAccepted = 5_000;
+            }
+            if (!int.TryParse(configuration["TimeBetweenFindUserRequests"], out _timeBetweenFindUserRequests))
+            {
+                _timeBetweenFindUserRequests = 1_500;
             }
         }
 
@@ -53,11 +54,11 @@ namespace LichessChallenger
 
             while (!stoppingToken.IsCancellationRequested)
             {
-                await Task.Delay(_pollTime, stoppingToken);
+                await Task.Delay(_timeBetweenChallenges, stoppingToken);
 
                 // Seems repetitive, but we need to check IsPlaying status every time
                 User me = await FindUser(_me, stoppingToken) ?? throw new NullReferenceException($"Can't find Lichess username {_me}");
-                if (!me!.IsOnline || me.IsPlaying == true)
+                if (!me.IsOnline || me.IsPlaying)
                 {
                     continue;
                 }
@@ -73,12 +74,12 @@ namespace LichessChallenger
                 var rival = _botList[botIndex];
                 var rivalUsername = rival.Username;
 
-                await Task.Delay(_pollTime, stoppingToken);
+                await Task.Delay(_timeBetweenFindUserRequests, stoppingToken);
                 _logger.LogInformation($"#{botIndex,-7} Trying to challenge {rivalUsername} ({timeControl.ClockLimit / 60} + {timeControl.ClockIncrement})");
 
                 rival = await FindUser(rivalUsername, stoppingToken);
 
-                if (rival?.IsOnline == false)
+                if (rival?.IsOnline != true || rival?.IsPlaying == true)
                 {
                     continue;
                 }
@@ -93,24 +94,7 @@ namespace LichessChallenger
                     _logger.LogError($"Error challenging {rivalUsername}:\t{e.Message}");
                 }
 
-                await Task.Delay(_timeToHaveAChallengeAccepted);
-
-
-
-                //await _httpClient.PostAsJsonAsync($"/api/challenge/{username}/cancel", challenge, stoppingToken);
-
-                //while (true)
-                //{
-                //    var streamResponse = await _httpClient.GetStreamAsync($"/api/stream/event", stoppingToken);
-
-                //    Encoding encode = Encoding.GetEncoding("utf-8");
-                //    using StreamReader readStream = new(streamResponse, encode);
-                //    Console.WriteLine(await readStream.ReadToEndAsync());
-                //    readStream.Close();
-
-                //    await Task.Delay(_timeToHaveAChallengeAccepted, stoppingToken);
-                //}
-
+                await Task.Delay(_timeToHaveAChallengeAccepted, stoppingToken);
             }
         }
 
@@ -119,7 +103,7 @@ namespace LichessChallenger
             User? user = null;
             try
             {
-                user = await _httpClient.GetFromJsonAsync<User>($"/api/user/{username}", stoppingToken);
+                user = (await _httpClient.GetFromJsonAsync<List<User>>($"/api/users/status?ids={username}", stoppingToken))?.FirstOrDefault();
             }
             catch (Exception e) // HttpRequestException, NotSupportedException or JsonException
             {

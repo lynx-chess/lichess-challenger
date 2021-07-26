@@ -2,50 +2,36 @@ ARG ARM_ARTIFACT_PATH
 ARG AMD_ARTIFACT_PATH
 
 ############################################################
-# ARM build/publish
+# ARM copy artifact
 ############################################################
 
-FROM mcr.microsoft.com/dotnet/sdk:6.0 as build-env-arm
+FROM mcr.microsoft.com/dotnet/sdk:6.0 as build-env-arm64
 ARG ARM_ARTIFACT_PATH
 ONBUILD RUN test -n "$ARM_ARTIFACT_PATH"
-
-# Copy csproj and restore as distinct layers
-ONBUILD COPY *.sln ./
-ONBUILD COPY ./src/LichessChallenger/*.csproj ./src/LichessChallenger/
-ONBUILD RUN dotnet restore ./src/LichessChallenger
-
-# Copy everything else and publish
-ONBUILD COPY . ./
-ONBUILD RUN dotnet publish ./src/LichessChallenger -c Release -o /lichess-challenger
+ONBUILD COPY $ARM_ARTIFACT_PATH /lichess-challenger
 
 ############################################################
-# AMD build/publish
+# AMD copy artifact
 ############################################################
 
-FROM mcr.microsoft.com/dotnet/sdk:6.0 as build-env-amd
-ARG $AMD_ARTIFACT_PATH
+FROM mcr.microsoft.com/dotnet/sdk:6.0 as build-env-amd64
+ARG AMD_ARTIFACT_PATH
 ONBUILD RUN test -n "$AMD_ARTIFACT_PATH"
-
-# Copy csproj and restore as distinct layers
-ONBUILD COPY *.sln ./
-ONBUILD COPY ./src/LichessChallenger/*.csproj ./src/LichessChallenger/
-ONBUILD RUN dotnet restore ./src/LichessChallenger
-
-# Copy everything else and publish
-ONBUILD COPY . ./
-ONBUILD RUN dotnet publish ./src/LichessChallenger -c Release -o /lichess-challenger
+ONBUILD COPY $AMD_ARTIFACT_PATH /lichess-challenger
 
 ############################################################
-# Chosen architecture build/publish
+# Chosen architecture artifact
 ############################################################
-FROM build-env-${TARGETARCH} as build-emv
+
+FROM build-env-${TARGETARCH} as build-env
 WORKDIR /lichess-challenger
 RUN chmod +x LichessChallenger
 
 ############################################################
 # Build runtime image
 ############################################################
-mcr.microsoft.com/dotnet/runtime-deps:6.0 as lichess-challenger
+
+FROM mcr.microsoft.com/dotnet/runtime-deps:6.0 as lichess-challenger
 COPY --from=build-env /lichess-challenger /lichess-challenger
 WORKDIR /lichess-challenger
 ENV PATH=/lichess-challenger:$PATH

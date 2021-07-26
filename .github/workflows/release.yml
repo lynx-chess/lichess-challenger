@@ -8,23 +8,23 @@ on:
         description: 'New version. If empty, run number will be used and no commit/tag/release will be created'
         default: ''
         required: false
-      should_commit_new_version:
-        description: 'Commit and push version increment. If true, this new commit will be the one tagged (in case should_tag_new_versionis also set to true)'
-        default: 'true'
-        required: false
       should_publish_docker_image:
         description: 'Create lichess-challenger docker image'
         default: 'true'
-        required: false
+        required: true
+      should_commit_new_version:
+        description: 'Commit and push version increment. If true, this new commit will be the one tagged (in case should_tag_new_versionis also set to true)'
+        default: 'true'
+        required: true
       should_tag_new_version:
         description: 'Tag version release. If false, no release will be created either'
         default: 'true'
-        required: false
+        required: true
       should_create_github_release:
         description: 'Create GitHub Release'
         default: 'true'
-        required: false
-       
+        required: true
+
 env:
   ARTIFACT_NAME: lichess-challenger
 
@@ -56,7 +56,7 @@ jobs:
     - name: Set version to ${{ github.event.inputs.new_version }}
       shell: pwsh
       run: |
-        $input_path = "Directory.Build.props"
+        $input_path = "src/LichessChallenger/LichessChallenger.csproj"
         $regex = "(?<=<Version>).*(?=</Version>)"
         (Get-Content $input_path) -Replace $regex, '${{ github.event.inputs.new_version }}' | Out-File $input_path
 
@@ -102,7 +102,7 @@ jobs:
       with:
         path: artifacts/${{ env.ARTIFACT_NAME }}-linux-arm64
         name: ${{ env.ARTIFACT_NAME }}-${{ github.event.inputs.new_version }}-${{ env.ARM_RID }}
-            
+
     - uses: actions/download-artifact@v2
       with:
         path: artifacts/${{ env.ARTIFACT_NAME }}-linux-x64
@@ -131,7 +131,9 @@ jobs:
           linux/arm64
         tags: |
           ${{ env.REGISTRY }}/lynx-chess/${{ env.ARTIFACT_NAME }}:${{ github.event.inputs.new_version }}
+          ${{ env.REGISTRY }}/lynx-chess/${{ env.ARTIFACT_NAME }}:latest
         push: true
+
     - name: Image digest
       run: echo ${{ steps.docker_build.outputs.digest }}
 
@@ -155,7 +157,7 @@ jobs:
     - name: Set version to ${{ github.event.inputs.new_version }}
       shell: pwsh
       run: |
-        $input_path = "Directory.Build.props"
+        $input_path = "src/LichessChallenger/LichessChallenger.csproj"
         $regex = "(?<=<Version>).*(?=</Version>)"
         (Get-Content $input_path) -Replace $regex, '${{ github.event.inputs.new_version }}' | Out-File $input_path
 
