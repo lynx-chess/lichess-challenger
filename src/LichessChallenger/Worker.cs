@@ -32,10 +32,15 @@ namespace LichessChallenger
             _timeControlList = configuration.GetSection("TimeControls").Get<Challenge[]>().OrderBy(_ => Guid.NewGuid()).ToList();
 
             _me = configuration["LICHESS_USERNAME"] ?? throw new("Missing essential config: Username");
+            var meAsRival = _botList.Find(u => u.Username.Equals(_me, StringComparison.OrdinalIgnoreCase));
+            if (meAsRival is not null)
+            {
+                _botList.Remove(meAsRival);
+            }
 
             if (!int.TryParse(configuration["TimeBetweenChallenges"], out _timeBetweenChallenges))
             {
-                _timeBetweenChallenges = 5_000;
+                _timeBetweenChallenges = 30_000;
             }
             if (!int.TryParse(configuration["TimeToHaveAChallengeAccepted"], out _timeToHaveAChallengeAccepted))
             {
