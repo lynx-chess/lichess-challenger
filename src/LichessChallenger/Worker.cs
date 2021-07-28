@@ -54,6 +54,7 @@ namespace LichessChallenger
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            int challengeCount = 0;
             int timeControlIndex = 0;
             int botIndex = 0;
 
@@ -80,14 +81,16 @@ namespace LichessChallenger
                 var rivalUsername = rival.Username;
 
                 await Task.Delay(_timeBetweenFindUserRequests, stoppingToken);
-                _logger.LogInformation($"#{botIndex,-7} Trying to challenge {rivalUsername} ({timeControl.ClockLimit / 60} + {timeControl.ClockIncrement})");
 
+                _logger.LogInformation($"Checking on {rivalUsername} ({botIndex}/{_botList.Count})...");
                 rival = await FindUser(rivalUsername, stoppingToken);
 
                 if (rival?.IsOnline != true || rival?.IsPlaying == true)
                 {
                     continue;
                 }
+
+                _logger.LogInformation($"#{challengeCount,-4} Trying to challenge {rivalUsername} ({timeControl.ClockLimit / 60} + {timeControl.ClockIncrement})");
 
                 try
                 {
@@ -97,7 +100,10 @@ namespace LichessChallenger
                 catch (Exception e)
                 {
                     _logger.LogError($"Error challenging {rivalUsername}:\t{e.Message}");
+                    continue;
                 }
+
+                ++challengeCount;
 
                 await Task.Delay(_timeToHaveAChallengeAccepted, stoppingToken);
             }
