@@ -13,7 +13,7 @@ on:
         default: 'true'
         required: true
       should_commit_new_version:
-        description: 'Commit and push version increment. If true, this new commit will be the one tagged (in case should_tag_new_versionis also set to true)'
+        description: 'Commit and push version increment. If true, this new commit will be the one tagged (in case should_tag_new_version is also set to true)'
         default: 'true'
         required: true
       should_tag_new_version:
