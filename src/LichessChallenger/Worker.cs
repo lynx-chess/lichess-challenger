@@ -63,8 +63,8 @@ namespace LichessChallenger
                 await Task.Delay(_timeBetweenChallenges, stoppingToken);
 
                 // Seems repetitive, but we need to check IsPlaying status every time
-                User me = await FindUser(_me, stoppingToken) ?? throw new NullReferenceException($"Can't find Lichess username {_me}");
-                if (!me.IsOnline || me.IsPlaying)
+                User? me = await FindUser(_me, stoppingToken);
+                if (me is null || !me.IsOnline || me.IsPlaying)
                 {
                     continue;
                 }
@@ -99,7 +99,7 @@ namespace LichessChallenger
                 }
                 catch (Exception e)
                 {
-                    _logger.LogError($"Error challenging {rivalUsername}:\t{e.Message}");
+                    _logger.LogError(e, $"Error challenging {rivalUsername}");
                     continue;
                 }
 
@@ -118,7 +118,7 @@ namespace LichessChallenger
             }
             catch (Exception e) // HttpRequestException, NotSupportedException or JsonException
             {
-                _logger.LogError($"Error querying online status of {username}:\t{e.Message}");
+                _logger.LogError(e, $"Error querying online status of {username}");
             }
 
             return user;
