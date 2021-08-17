@@ -31,7 +31,7 @@ RUN chmod +x LichessChallenger
 # Build runtime image
 ############################################################
 
-FROM mcr.microsoft.com/dotnet/runtime-deps:6.0 as lichess-challenger
+FROM mcr.microsoft.com/dotnet/runtime-deps:6.0.0-preview.6 as lichess-challenger
 COPY --from=build-env /lichess-challenger /lichess-challenger
 WORKDIR /lichess-challenger
 ENV PATH=/lichess-challenger:$PATH
