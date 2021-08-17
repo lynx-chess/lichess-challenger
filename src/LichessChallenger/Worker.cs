@@ -6,50 +6,22 @@ using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using LichessChallenger.Model;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace LichessChallenger
 {
-    public class Worker : BackgroundService
+    internal class Worker : BackgroundService
     {
-        private readonly int _timeBetweenChallenges;
-        private readonly int _timeBetweenFindUserRequests;
-        private readonly int _timeToHaveAChallengeAccepted;
-        private readonly string _me;
-        private readonly List<User> _botList;
-        private readonly List<Challenge> _timeControlList;
         private readonly HttpClient _httpClient;
+        private readonly ChallengerConfiguration _configuration;
         private readonly ILogger<Worker> _logger;
 
-        public Worker(ILogger<Worker> logger, HttpClient httpClient, IConfiguration configuration)
+        public Worker(HttpClient httpClient, ChallengerConfiguration configuration, ILogger<Worker> logger)
         {
             _httpClient = httpClient;
+            _configuration = configuration;
             _logger = logger;
-
-            _botList = configuration.GetSection("Bots").Get<User[]>().OrderBy(_ => Guid.NewGuid()).ToList();
-            _timeControlList = configuration.GetSection("TimeControls").Get<Challenge[]>().OrderBy(_ => Guid.NewGuid()).ToList();
-
-            _me = configuration["LICHESS_USERNAME"] ?? throw new("Missing essential config: Username");
-            var meAsRival = _botList.Find(u => u.Username.Equals(_me, StringComparison.OrdinalIgnoreCase));
-            if (meAsRival is not null)
-            {
-                _botList.Remove(meAsRival);
-            }
-
-            if (!int.TryParse(configuration["TimeBetweenChallenges"], out _timeBetweenChallenges))
-            {
-                _timeBetweenChallenges = 30_000;
-            }
-            if (!int.TryParse(configuration["TimeToHaveAChallengeAccepted"], out _timeToHaveAChallengeAccepted))
-            {
-                _timeToHaveAChallengeAccepted = 5_000;
-            }
-            if (!int.TryParse(configuration["TimeBetweenFindUserRequests"], out _timeBetweenFindUserRequests))
-            {
-                _timeBetweenFindUserRequests = 1_500;
-            }
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -60,29 +32,29 @@ namespace LichessChallenger
 
             while (!stoppingToken.IsCancellationRequested)
             {
-                await Task.Delay(_timeBetweenChallenges, stoppingToken);
+                await Task.Delay(_configuration.TimeBetweenChallenges, stoppingToken);
 
                 // Seems repetitive, but we need to check IsPlaying status every time
-                User? me = await FindUser(_me, stoppingToken);
+                User? me = await FindUser(_configuration.BotName, stoppingToken);
                 if (me is null || !me.IsOnline || me.IsPlaying)
                 {
                     continue;
                 }
 
                 // Making sure to update the indexes after the 'continue' as a consequence of the engine being playing
-                botIndex = (botIndex + 1) % _botList.Count;
+                botIndex = (botIndex + 1) % _configuration.BotsToPlay.Count;
                 if (botIndex == 0)
                 {
-                    timeControlIndex = (timeControlIndex + 1) % _timeControlList.Count;
+                    timeControlIndex = (timeControlIndex + 1) % _configuration.TimeControlsToPlay.Count;
                 }
 
-                var timeControl = _timeControlList[timeControlIndex];
-                var rival = _botList[botIndex];
+                var timeControl = _configuration.TimeControlsToPlay[timeControlIndex];
+                var rival = _configuration.BotsToPlay[botIndex];
                 var rivalUsername = rival.Username;
 
-                await Task.Delay(_timeBetweenFindUserRequests, stoppingToken);
+                await Task.Delay(_configuration.TimeBetweenFindUserRequests, stoppingToken);
 
-                _logger.LogInformation($"Checking on {rivalUsername} ({botIndex}/{_botList.Count})...");
+                _logger.LogInformation($"Checking on {rivalUsername} ({botIndex}/{_configuration.BotsToPlay.Count})...");
                 rival = await FindUser(rivalUsername, stoppingToken);
 
                 if (rival?.IsOnline != true || rival?.IsPlaying == true)
@@ -104,8 +76,6 @@ namespace LichessChallenger
                 }
 
                 ++challengeCount;
-
-                await Task.Delay(_timeToHaveAChallengeAccepted, stoppingToken);
             }
         }
 
