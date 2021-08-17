@@ -61,7 +61,7 @@ jobs:
         (Get-Content $input_path) -Replace $regex, '${{ github.event.inputs.new_version }}' | Out-File $input_path
 
     - name: Publish ${{ matrix.runtime-identifier }} version
-      run: dotnet publish src/LichessChallenger/LichessChallenger.csproj -c Release --runtime ${{ matrix.runtime-identifier }} -o artifacts/${{ matrix.runtime-identifier }}
+      run: dotnet publish src/LichessChallenger/LichessChallenger.csproj -c Release --runtime ${{ matrix.runtime-identifier }} --self-contained -o artifacts/${{ matrix.runtime-identifier }}
 
     - name: Upload ${{ env.ARTIFACT_NAME }}-${{ matrix.runtime-identifier }} artifact
       if: github.event.inputs.new_version != ''

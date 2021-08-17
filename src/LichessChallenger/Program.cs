@@ -9,6 +9,7 @@ using System;
 using System.Net.Http.Headers;
 using NLog.Web;
 using NLog.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 
 var host = Host
     .CreateDefaultBuilder(args)
@@ -33,23 +34,36 @@ internal static class HostBuilderExtensions
         return builder
             .ConfigureServices((context, services) =>
             {
+                var challengerConfiguration = new ChallengerConfiguration();
+                context.Configuration.GetRequiredSection(nameof(ChallengerConfiguration)).Bind(challengerConfiguration);
+
+                var token = context.Configuration[ChallengerConfiguration.TokenId];
+                if (string.IsNullOrEmpty(token))
+                {
+                    throw new ArgumentException($"Missing essential config: {ChallengerConfiguration.TokenId}");
+                }
+
+                var botName = context.Configuration[ChallengerConfiguration.UsernameId];
+                if (string.IsNullOrEmpty(botName))
+                {
+                    throw new ArgumentException($"Missing essential config: {ChallengerConfiguration.UsernameId}");
+                }
+
+                challengerConfiguration.Setup(botName);
+
+                services.AddSingleton(challengerConfiguration);
+
                 services
                     .AddHttpClient<Worker>((httpClient) =>
                     {
                         httpClient.BaseAddress = new Uri("https://lichess.org/api");
-
-                        var token = context.Configuration["LICHESS_API_TOKEN"];
-                        if (string.IsNullOrEmpty(token))
-                        {
-                            throw new ArgumentException("Missing essential config: LICHESS_API_TOKEN");
-                        }
-
                         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
                     })
                     .SetHandlerLifetime(TimeSpan.FromMinutes(5))
                     .AddPolicyHandler(ErrorRetryPolicy())
                     .AddPolicyHandler(TooManyRequestsRetryPolicy());
-                services.AddHostedService<Worker>(services => services.GetRequiredService<Worker>());
+
+                services.AddHostedService(services => services.GetRequiredService<Worker>());
             });
     }
 
@@ -59,7 +73,7 @@ internal static class HostBuilderExtensions
             .ConfigureLogging((hostContext, logBuilder) =>
                 {
                     logBuilder
-                        .AddNLogWeb(new NLogLoggingConfiguration(hostContext.Configuration.GetSection("NLog")))
+                        .AddNLogWeb(new NLogLoggingConfiguration(hostContext.Configuration.GetRequiredSection("NLog")))
                         .SetMinimumLevel(LogLevel.Trace);
                 })
             .UseNLog();
