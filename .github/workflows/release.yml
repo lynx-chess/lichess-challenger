@@ -139,7 +139,7 @@ jobs:
 
   release:
     needs: [publish-artifacts, publish-docker-images]
-    if: always() && github.event.inputs.new_version != ''
+    if: success() && github.event.inputs.new_version != ''
 
     runs-on: ubuntu-latest
 
