@@ -25,7 +25,7 @@ namespace LichessChallenger
         /// </summary>
         public int TimeBetweenFindUserRequests { get; set; } = 1_500;
 
-        public User[] WeakBots { get; set; } = null!;
+        public User[] WeakBots { get; set; }
 
         public User[] AverageBots { get; set; }
 
