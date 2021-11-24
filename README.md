@@ -1,7 +1,5 @@
 # lichess-challenger
 
-⚠️ Project under development ⚠️
-
 [![Build][buildlogo]][buildlink]
 [![lichess-challenger release][releaselogo]][releaselink]
 
