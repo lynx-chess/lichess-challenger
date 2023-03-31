@@ -98,12 +98,12 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v3
       with:
         path: artifacts/${{ env.ARTIFACT_NAME }}-linux-arm64
         name: ${{ env.ARTIFACT_NAME }}-${{ github.event.inputs.new_version }}-${{ env.ARM_RID }}
 
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v3
       with:
         path: artifacts/${{ env.ARTIFACT_NAME }}-linux-x64
         name: ${{ env.ARTIFACT_NAME }}-${{ github.event.inputs.new_version }}-${{ env.AMD_RID }}
@@ -178,7 +178,7 @@ jobs:
         git tag -a v${{ github.event.inputs.new_version }} -m "v${{ github.event.inputs.new_version }}"
         git push --tags
 
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v3
       if: github.event.inputs.should_create_github_release == 'true' && github.event.inputs.should_tag_new_version == 'true'
       with:
         path: artifacts/
