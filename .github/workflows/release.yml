@@ -65,7 +65,7 @@ jobs:
 
     - name: Upload ${{ env.ARTIFACT_NAME }}-${{ matrix.runtime-identifier }} artifact
       if: github.event.inputs.new_version != ''
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: ${{ env.ARTIFACT_NAME }}-${{ github.event.inputs.new_version }}-${{ matrix.runtime-identifier }}
         path: |
@@ -75,7 +75,7 @@ jobs:
 
     - name: Upload ${{ env.ARTIFACT_NAME }}-${{ env.GITHUB_REF_SLUG }}-${{ github.run_number }}-${{ matrix.runtime-identifier }} artifact
       if: github.event.inputs.new_version == ''
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: ${{ env.ARTIFACT_NAME }}-${{ env.GITHUB_REF_SLUG }}-${{ github.run_number }}-${{ matrix.runtime-identifier }}
         path: |
