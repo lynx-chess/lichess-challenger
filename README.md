@@ -1,5 +1,9 @@
 # lichess-challenger
 
+Repository on 2023-12-06, since [lichess-bot-devs/lichess-bot](https://github.com/lichess-bot-devs/lichess-bot) already includes this functionality and is the 'de facto' standard for running bots in lichess.
+
+----
+
 [![Build][buildlogo]][buildlink]
 [![lichess-challenger release][releaselogo]][releaselink]
 
